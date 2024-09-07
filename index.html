@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Search Tool</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to right, #1b1b1b, #1b1b1b);
+            color: #ddd;
+            margin: 0;
+            overflow: auto; /* Allow scrolling */
+        } 
+
+        .container {
+            background-color: #1b1b1b;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 15px rgba(5, 5, 5, 0.4);
+            text-align: center;
+            width: 450px;
+            margin: 20px auto; /* Center align and add space at the top */
+            max-width: 90%;
+            overflow-y: auto; /* Allow vertical scrolling */
+            max-height: calc(100vh - 40px); /* Make sure the container fits within the viewport */
+        }
+
+        .content {
+            flex-grow: 1;
+        }
+
+        @keyframes gradient-animation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        h1 {
+            font-size: 30px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff00f7, #ff0037, #4800ff, #0095ff,#4800ff,#ff00f7,#e51a1a);       /* to select gradient colour*/
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient-animation 20s ease infinite;
+        }
+
+
+        
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input, select {
+            padding: 12px;
+            border: 2px solid #41059a;
+            border-radius: 8px;
+            background-color: #242424;
+            color: #ffffff;
+        }
+
+        .prefix-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .prefixValue {
+            position: relative;
+            flex: 1;
+        }
+
+        .remove-prefix {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border: none;
+            border-radius: 4px;
+            background-color: #e51a1a;
+            color: #ffffff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .remove-prefix:hover {
+            background-color: #444444;
+        }
+
+        .add-prefix {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: #6c34c7;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        .add-prefix:hover {
+            background-color: #55279f;
+        }
+
+        .add-prefix:active {
+            transform: scale(0.95);
+        }
+
+        button[type="submit"] {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(270deg, #ff00f7, #ff0037, #4800ff, #0095ff,#4800ff,#ff00f7,#e51a1a);       /* to select gradient colour*/
+            background-size: 400% 400%;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            animation: gradientAnimation 8s ease infinite;
+        }
+
+        button[type="submit"]:hover {
+            transform: scale(1.05);
+        }
+
+        button[type="submit"]:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .description, .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #41059a;
+            border-radius: 8px;
+            background-color: #242424;
+            color: #ddd;
+            text-align: left;
+        }
+
+        .signature {
+            margin-top: 20px;
+            color: #41059a;
+            font-style: italic;
+            opacity: 0.8;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <h1>Advanced Google Search Tool</h1>
+            <form id="searchForm">
+                <input type="text" id="query" placeholder="Enter search term" required>
+                <div id="prefixContainer">
+                    <div class="prefix-group">
+                        <select class="prefix" required>
+                            <option value="">Select a prefix</option>
+                            <option value="filetype">Filetype</option>
+                            <option value="site">Site</option>
+                            <option value="intitle">Intitle</option>
+                            <option value="inurl">Inurl</option>
+                            <option value="intext">Intext</option>
+                            <option value="related">Related</option>
+                            <option value="define">Define</option>
+                            <option value="cache">Cache</option>
+                            <option value="source">Source</option>
+                            <option value="src">Src</option>
+                            <option value="weather">Weather</option>
+                            <option value="map">Map</option>
+                            <option value="location">Location</option>
+                            <option value="type">Type</option>
+                            <option value="allintitle">Allintitle</option>
+                            <option value="allinurl">Allinurl</option>
+                            <option value="allintext">Allintext</option>
+                            <option value="allinanchor">Allinanchor</option>
+                            <option value="link">Link</option>
+                            <option value="around">AROUND(x)</option>
+                            <option value="info">Info</option>
+                            <option value="feed">Feed</option>
+                            <option value="mimetype">Mimetype</option>
+                            <option value="name">Name</option>
+                            <option value="before">Before</option>
+                            <option value="after">After</option>
+                        </select>
+                        <div class="prefixValue">
+                            <input type="text" class="prefixValueInput" placeholder="Prefix value" required>
+                            <button type="button" class="remove-prefix">X</button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="addPrefixButton" class="add-prefix">Add Prefix</button>
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        <div id="description" class="description">Select a prefix to see its use and example.</div>
+        <div id="instructions" class="instructions">
+            You can combine multiple prefixes for more specific searches. For example:<br>
+            <ul>
+                <li><code>site:wikipedia.org intitle:"Climate Change"</code> - Finds pages on Wikipedia with "Climate Change" in the title.</li>
+                <li><code>filetype:pdf intext:"data analysis"</code> - Searches for PDF files that contain "data analysis" in their text.</li>
+                <li><code>related:example.com site:edu</code> - Finds educational sites related to example.com.</li>
+            </ul>
+        </div>
+        <div class="signature">By A.A.D.A.</div>
+    </div>
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            let query = document.getElementById('query').value;
+            let prefixGroups = document.querySelectorAll('.prefix-group');
+            let searchQuery = query;
+
+            prefixGroups.forEach(group => {
+                let prefix = group.querySelector('.prefix').value;
+                let prefixValue = group.querySelector('.prefixValueInput').value;
+                if (prefix && prefixValue) {
+                    searchQuery = `${prefix}:${prefixValue} ${searchQuery}`;
+                }
+            });
+
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
+        });
+
+        document.getElementById('addPrefixButton').addEventListener('click', function() {
+            let prefixContainer = document.getElementById('prefixContainer');
+            let newPrefixGroup = document.createElement('div');
+            newPrefixGroup.classList.add('prefix-group');
+            newPrefixGroup.innerHTML = `
+                <select class="prefix" required>
+                    <option value="">Select a prefix</option>
+                    <option value="filetype">Filetype</option>
+                    <option value="site">Site</option>
+                    <option value="intitle">Intitle</option>
+                    <option value="inurl">Inurl</option>
+                    <option value="intext">Intext</option>
+                    <option value="related">Related</option>
+                    <option value="define">Define</option>
+                    <option value="cache">Cache</option>
+                    <option value="source">Source</option>
+                    <option value="src">Src</option>
+                    <option value="weather">Weather</option>
+                    <option value="map">Map</option>
+                    <option value="location">Location</option>
+                    <option value="type">Type</option>
+                    <option value="allintitle">Allintitle</option>
+                    <option value="allinurl">Allinurl</option>
+                    <option value="allintext">Allintext</option>
+                    <option value="allinanchor">Allinanchor</option>
+                    <option value="link">Link</option>
+                    <option value="around">AROUND(x)</option>
+                    <option value="info">Info</option>
+                    <option value="feed">Feed</option>
+                    <option value="mimetype">Mimetype</option>
+                    <option value="name">Name</option>
+                    <option value="before">Before</option>
+                    <option value="after">After</option>
+                </select>
+                <div class="prefixValue">
+                    <input type="text" class="prefixValueInput" placeholder="Prefix value" required>
+                    <button type="button" class="remove-prefix">X</button>
+                </div>
+            `;
+            prefixContainer.appendChild(newPrefixGroup);
+            updatePrefixListeners();
+        });
+
+        function updateDescription(prefixGroup) {
+            let prefix = prefixGroup.querySelector('.prefix').value;
+            let prefixValueInput = prefixGroup.querySelector('.prefixValueInput');
+            let description = document.getElementById('description');
+
+            switch (prefix) {
+                case 'filetype':
+                    prefixValueInput.placeholder = 'e.g., pdf';
+                    description.textContent = 'filetype: Searches for files of a specific type. Example: filetype:pdf';
+                    break;
+                case 'site':
+                    prefixValueInput.placeholder = 'e.g., wikipedia.org';
+                    description.textContent = 'site: Limits results to those from a specific website. Example: site:wikipedia.org';
+                    break;
+                case 'intitle':
+                    prefixValueInput.placeholder = 'e.g., "Climate Change"';
+                    description.textContent = 'intitle: Finds pages with a specific term in the title. Example: intitle:"Climate Change"';
+                    break;
+                case 'inurl':
+                    prefixValueInput.placeholder = 'e.g., research';
+                    description.textContent = 'inurl: Searches for pages with a specific term in the URL. Example: inurl:research';
+                    break;
+                case 'intext':
+                    prefixValueInput.placeholder = 'e.g., "data analysis"';
+                    description.textContent = 'intext: Finds pages with a specific term in the text. Example: intext:"data analysis"';
+                    break;
+                case 'related':
+                    prefixValueInput.placeholder = 'e.g., example.com';
+                    description.textContent = 'related: Finds sites related to a specific URL. Example: related:example.com';
+                    break;
+                case 'define':
+                    prefixValueInput.placeholder = 'e.g., algorithm';
+                    description.textContent = 'define: Provides the definition of a word. Example: define:algorithm';
+                    break;
+                case 'cache':
+                    prefixValueInput.placeholder = 'e.g., example.com';
+                    description.textContent = 'cache: Shows the cached version of a site. Example: cache:example.com';
+                    break;
+                case 'source':
+                    prefixValueInput.placeholder = 'e.g., bbc';
+                    description.textContent = 'source: Finds news from a specific source. Example: source:bbc';
+                    break;
+                case 'src':
+                    prefixValueInput.placeholder = 'e.g., example.com';
+                    description.textContent = 'src: Similar to source, used for finding specific sources. Example: src:example.com';
+                    break;
+                case 'weather':
+                    prefixValueInput.placeholder = 'e.g., New York';
+                    description.textContent = 'weather: Shows the weather for a specific location. Example: weather:New York';
+                    break;
+                case 'map':
+                    prefixValueInput.placeholder = 'e.g., Paris';
+                    description.textContent = 'map: Shows the map for a specific location. Example: map:Paris';
+                    break;
+                case 'location':
+                    prefixValueInput.placeholder = 'e.g., restaurant';
+                    description.textContent = 'location: Searches for places near a specific location. Example: location:restaurant';
+                    break;
+                case 'type':
+                    prefixValueInput.placeholder = 'e.g., video';
+                    description.textContent = 'type: Searches for specific types of media. Example: type:video';
+                    break;
+                case 'allintitle':
+                    prefixValueInput.placeholder = 'e.g., "data science"';
+                    description.textContent = 'allintitle: Finds pages where all terms are in the title. Example: allintitle:"data science"';
+                    break;
+                case 'allinurl':
+                    prefixValueInput.placeholder = 'e.g., research papers';
+                    description.textContent = 'allinurl: Finds pages where all terms are in the URL. Example: allinurl:research papers';
+                    break;
+                case 'allintext':
+                    prefixValueInput.placeholder = 'e.g., quantum computing';
+                    description.textContent = 'allintext: Finds pages where all terms are in the text. Example: allintext:quantum computing';
+                    break;
+                case 'allinanchor':
+                    prefixValueInput.placeholder = 'e.g., data mining';
+                    description.textContent = 'allinanchor: Finds pages where all terms are in the anchor text. Example: allinanchor:data mining';
+                    break;
+                case 'link':
+                    prefixValueInput.placeholder = 'e.g., example.com';
+                    description.textContent = 'link: Finds pages that link to a specific URL. Example: link:example.com';
+                    break;
+                case 'around':
+                    prefixValueInput.placeholder = 'e.g., 5';
+                    description.textContent = 'AROUND(x): Finds terms within x words of each other. Example: AROUND(5):"climate change" "policy"';
+                    break;
+                case 'info':
+                    prefixValueInput.placeholder = 'e.g., example.com';
+                    description.textContent = 'info: Shows information about a specific URL. Example: info:example.com';
+                    break;
+                case 'feed':
+                    prefixValueInput.placeholder = 'e.g., technology';
+                    description.textContent = 'feed: Searches for RSS feeds related to a topic. Example: feed:technology';
+                    break;
+                case 'mimetype':
+                    prefixValueInput.placeholder = 'e.g., application/pdf';
+                    description.textContent = 'mimetype: Searches for a specific MIME type. Example: mimetype:application/pdf';
+                    break;
+                case 'name':
+                    prefixValueInput.placeholder = 'e.g., John Doe';
+                    description.textContent = 'name: Searches for a specific name. Example: name:John Doe';
+                    break;
+                case 'before':
+                    prefixValueInput.placeholder = 'e.g., 2021';
+                    description.textContent = 'before: Limits results to those published before a specific date. Example: before:2021';
+                    break;
+                case 'after':
+                    prefixValueInput.placeholder = 'e.g., 2021';
+                    description.textContent = 'after: Limits results to those published after a specific date. Example: after:2021';
+                    break;
+                default:
+                    prefixValueInput.placeholder = 'Prefix value';
+                    description.textContent = 'Select a prefix to see its use and example.';
+                    break;
+            }
+        }
+
+        function updatePrefixListeners() {
+            document.querySelectorAll('.prefix').forEach(select => {
+                select.addEventListener('change', function() {
+                    updateDescription(this.closest('.prefix-group'));
+                });
+            });
+
+            document.querySelectorAll('.remove-prefix').forEach(button => {
+                button.addEventListener('click', function() {
+                    this.closest('.prefix-group').remove();
+                });
+            });
+        }
+
+        // Initial call to set up event listeners
+        updatePrefixListeners();
+    </script>
+</body>
+</html>
