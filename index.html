@@ -3,188 +3,507 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Search Tool</title>
+    <title>Advanced Google Search Tool</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(to right, #1b1b1b, #1b1b1b);
-            color: #ddd;
+            background: radial-gradient(circle at center, #0c0c2e 0%, #0f0f1a 100%);
+            color: #f0f0f0;
             margin: 0;
-            overflow: auto; /* Allow scrolling */
-        } 
-
-        .container {
-            background-color: #1b1b1b;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 15px rgba(5, 5, 5, 0.4);
-            text-align: center;
-            width: 450px;
-            margin: 20px auto; /* Center align and add space at the top */
-            max-width: 90%;
-            overflow-y: auto; /* Allow vertical scrolling */
-            max-height: calc(100vh - 40px); /* Make sure the container fits within the viewport */
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%234800ff' fill-opacity='0.06'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
         }
 
-        .content {
-            flex-grow: 1;
+        /* Animated particles */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
         }
 
-        @keyframes gradient-animation {
-            0% {
-                background-position: 0% 50%;
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(150, 91, 255, 0.8), rgba(150, 91, 255, 0));
+            animation: float 15s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            25% {
+                opacity: 0.5;
             }
             50% {
-                background-position: 100% 50%;
+                transform: translateY(-150px) translateX(100px);
+                opacity: 0.8;
             }
-            100% {
-                background-position: 0% 50%;
+            75% {
+                opacity: 0.5;
             }
         }
-
-        h1 {
-            font-size: 30px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            background: linear-gradient(45deg, #ff00f7, #ff0037, #4800ff, #0095ff,#4800ff,#ff00f7,#e51a1a);       /* to select gradient colour*/
-            background-size: 400% 400%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: gradient-animation 20s ease infinite;
-        }
-
-
         
-
-        form {
+        .main-container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            margin: 30px;
+            background: rgba(18, 18, 31, 0.8);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(2, 4, 46, 0.4);
+            border-radius: 16px;
+            border: 1px solid rgba(95, 58, 255, 0.3);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .search-container {
+            flex: 3;
+            padding: 30px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            position: relative;
         }
-
-        input, select {
-            padding: 12px;
-            border: 2px solid #41059a;
-            border-radius: 8px;
-            background-color: #242424;
+        
+        .info-container {
+            flex: 1;
+            padding: 30px;
+            background: rgba(31, 26, 52, 0.5);
+            backdrop-filter: blur(5px);
+            border-left: 1px solid rgba(95, 58, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        h1 {
+            text-align: center;
+            padding: 15px 0;
+            margin: 0 0 20px 0;
+            border-bottom: 1px solid rgba(95, 58, 255, 0.5);
+            font-size: 32px;
+            font-weight: 600;
+            background: linear-gradient(45deg, #ff00f7, #ff0037, #4800ff, #0095ff, #4800ff, #ff00f7, #e51a1a);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient-animation 8s ease infinite;
+            letter-spacing: 1px;
+        }
+        
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 15px;
+            margin: 15px 0;
+            box-sizing: border-box;
+            border: 2px solid rgba(95, 58, 255, 0.5);
+            border-radius: 12px;
+            background-color: rgba(30, 30, 46, 0.7);
             color: #ffffff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #6c34c7;
+            box-shadow: 0 0 15px rgba(108, 52, 199, 0.5);
+        }
+        
         .prefix-group {
             display: flex;
+            margin-bottom: 15px;
             align-items: center;
             gap: 10px;
-            margin-bottom: 10px;
         }
-
-        .prefixValue {
-            position: relative;
+        
+        .prefix-select {
             flex: 1;
-        }
-
-        .remove-prefix {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 24px;
-            height: 24px;
-            padding: 0;
-            border: none;
-            border-radius: 4px;
-            background-color: #e51a1a;
+            padding: 15px;
+            border: 2px solid rgba(95, 58, 255, 0.5);
+            border-radius: 12px;
+            background-color: rgba(30, 30, 46, 0.7);
             color: #ffffff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .prefix-select:focus {
+            outline: none;
+            border-color: #6c34c7;
+            box-shadow: 0 0 15px rgba(108, 52, 199, 0.5);
+        }
+        
+        .prefix-value {
+            flex: 3;
+            padding: 15px;
+            border: 2px solid rgba(95, 58, 255, 0.5);
+            border-radius: 12px;
+            background-color: rgba(30, 30, 46, 0.7);
+            color: #ffffff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .prefix-value:focus {
+            outline: none;
+            border-color: #6c34c7;
+            box-shadow: 0 0 15px rgba(108, 52, 199, 0.5);
+        }
+        
+        .remove-button {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .remove-prefix:hover {
-            background-color: #444444;
-        }
-
-        .add-prefix {
-            padding: 12px;
             border: none;
-            border-radius: 8px;
-            background-color: #6c34c7;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #e51a1a, #ff0037);
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        .remove-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .add-prefix-button {
+            padding: 15px;
+            margin: 15px 0;
+            width: 100%;
+            cursor: pointer;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(45deg, #4800ff, #6c34c7);
             color: #fff;
-            cursor: pointer;
             font-weight: 600;
-            transition: background-color 0.2s, transform 0.2s;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(108, 52, 199, 0.3);
         }
-
-        .add-prefix:hover {
-            background-color: #55279f;
+        
+        .add-prefix-button:hover {
+            background: linear-gradient(45deg, #6c34c7, #4800ff);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(108, 52, 199, 0.4);
         }
-
-        .add-prefix:active {
-            transform: scale(0.95);
-        }
-
-        button[type="submit"] {
-            padding: 12px;
+        
+        .search-button {
+            padding: 16px;
+            margin: 20px 0;
+            width: 100%;
+            cursor: pointer;
             border: none;
-            border-radius: 8px;
-            background: linear-gradient(270deg, #ff00f7, #ff0037, #4800ff, #0095ff,#4800ff,#ff00f7,#e51a1a);       /* to select gradient colour*/
+            border-radius: 12px;
+            background: linear-gradient(270deg, #ff00f7, #ff0037, #4800ff, #0095ff, #4800ff, #ff00f7, #e51a1a);
             background-size: 400% 400%;
             color: #fff;
             font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s;
+            font-size: 18px;
+            letter-spacing: 1px;
             animation: gradientAnimation 8s ease infinite;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
         }
-
-        button[type="submit"]:hover {
-            transform: scale(1.05);
+        
+        .search-button::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: rotate(45deg);
+            animation: shine 3s linear infinite;
         }
-
-        button[type="submit"]:active {
-            transform: scale(0.95);
-        }
-
-        @keyframes gradientAnimation {
+        
+        @keyframes shine {
             0% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
+                transform: translateX(-100%) rotate(45deg);
             }
             100% {
-                background-position: 0% 50%;
+                transform: translateX(100%) rotate(45deg);
+            }
+        }
+        
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .search-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .search-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .info-box {
+            flex: 1;
+            padding: 20px;
+            margin-top: 30px;
+            border: 1px solid rgba(95, 58, 255, 0.3);
+            border-radius: 12px;
+            background-color: rgba(31, 26, 52, 0.7);
+            text-align: left;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .info-box h3 {
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 20px;
+            background: linear-gradient(to right, #ff00f7, #4800ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .info-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+            border-color: rgba(95, 58, 255, 0.6);
+        }
+        
+        .signature {
+            text-align: right;
+            padding: 15px;
+            margin-top: auto;
+            color: rgba(95, 58, 255, 0.9);
+            font-style: italic;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(95, 58, 255, 0.5);
+        }
+        
+        .services-container {
+            margin-top: auto;
+            padding: 15px 0;
+            border-top: 1px solid rgba(95, 58, 255, 0.3);
+        }
+        
+        .services-select {
+            display: none;
+            width: 100%;
+            padding: 15px;
+            margin-top: 15px;
+            border: 2px solid rgba(95, 58, 255, 0.5);
+            border-radius: 12px;
+            background-color: rgba(30, 30, 46, 0.7);
+            color: #ffffff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .other-services {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(45deg, #6c34c7, #4800ff);
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(108, 52, 199, 0.3);
+        }
+        
+        .other-services:hover {
+            background: linear-gradient(45deg, #4800ff, #6c34c7);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(108, 52, 199, 0.4);
+        }
+        
+        .conversion-result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid rgba(95, 58, 255, 0.3);
+            border-radius: 12px;
+            background-color: rgba(30, 30, 46, 0.7);
+            color: #ffffff;
+            display: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            font-family: 'Courier New', monospace;
+            overflow-wrap: break-word;
+        }
+        
+        hr {
+            border: none;
+            height: 1px;
+            background: linear-gradient(to right, rgba(95, 58, 255, 0.1), rgba(95, 58, 255, 0.5), rgba(95, 58, 255, 0.1));
+            margin: 20px 0;
+        }
+
+        .instructions {
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .instructions code {
+            background-color: rgba(95, 58, 255, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Additional tooltip functionality */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+            cursor: help;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: rgba(18, 18, 31, 0.95);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(95, 58, 255, 0.3);
+            font-size: 0.9rem;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 900px) {
+            .main-container {
+                flex-direction: column;
+                margin: 20px;
+            }
+            
+            .info-container {
+                border-left: none;
+                border-top: 1px solid rgba(95, 58, 255, 0.3);
             }
         }
 
-        .description, .instructions {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #41059a;
-            border-radius: 8px;
-            background-color: #242424;
-            color: #ddd;
-            text-align: left;
+        /* Visual decoration elements */
+        .decoration-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(95, 58, 255, 0.2), rgba(95, 58, 255, 0));
+            z-index: -1;
         }
 
-        .signature {
-            margin-top: 20px;
-            color: #41059a;
-            font-style: italic;
-            opacity: 0.8;
-            text-align: center;
+        /* Pulse animation for decoration */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.2;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.4;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0.2;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="content">
+    <!-- Animated background particles -->
+    <div class="particles">
+        <div class="particle" style="width: 80px; height: 80px; top: 10%; left: 20%; animation-delay: 0s;"></div>
+        <div class="particle" style="width: 120px; height: 120px; top: 60%; left: 80%; animation-delay: 2s;"></div>
+        <div class="particle" style="width: 150px; height: 150px; top: 70%; left: 10%; animation-delay: 4s;"></div>
+        <div class="particle" style="width: 100px; height: 100px; top: 30%; left: 60%; animation-delay: 6s;"></div>
+        <div class="particle" style="width: 70px; height: 70px; top: 20%; left: 40%; animation-delay: 8s;"></div>
+        <div class="particle" style="width: 90px; height: 90px; top: 80%; left: 30%; animation-delay: 10s;"></div>
+    </div>
+
+    <div class="main-container">
+        <!-- Decorative circles -->
+        <div class="decoration-circle" style="width: 300px; height: 300px; top: -150px; left: -150px; animation: pulse 8s infinite ease-in-out;"></div>
+        <div class="decoration-circle" style="width: 200px; height: 200px; bottom: -100px; right: -100px; animation: pulse 6s infinite ease-in-out;"></div>
+        
+        <div class="search-container">
             <h1>Advanced Google Search Tool</h1>
-            <form id="searchForm">
-                <input type="text" id="query" placeholder="Enter search term" required>
+            <div>
+                <input type="text" class="search-input" placeholder="Enter search term" id="query">
+                
                 <div id="prefixContainer">
                     <div class="prefix-group">
-                        <select class="prefix" required>
+                        <select class="prefix-select" id="prefix">
                             <option value="">Select a prefix</option>
                             <option value="filetype">Filetype</option>
                             <option value="site">Site</option>
@@ -206,6 +525,7 @@
                             <option value="allinanchor">Allinanchor</option>
                             <option value="link">Link</option>
                             <option value="around">AROUND(x)</option>
+                            <option value=":drive.google.com">FromDrive</option>
                             <option value="info">Info</option>
                             <option value="feed">Feed</option>
                             <option value="mimetype">Mimetype</option>
@@ -213,52 +533,105 @@
                             <option value="before">Before</option>
                             <option value="after">After</option>
                         </select>
-                        <div class="prefixValue">
-                            <input type="text" class="prefixValueInput" placeholder="Prefix value" required>
-                            <button type="button" class="remove-prefix">X</button>
-                        </div>
+                        <input type="text" class="prefix-value" placeholder="Prefix value" id="prefixValue">
+                        <button class="remove-button" id="removePrefix">×</button>
                     </div>
                 </div>
-                <button type="button" id="addPrefixButton" class="add-prefix">Add Prefix</button>
-                <button type="submit">Search</button>
-            </form>
+                
+                <button class="add-prefix-button" id="addPrefix">
+                    <span>Add Prefix</span>
+                </button>
+                <button class="search-button" id="searchButton">Search</button>
+            </div>
+            
+            <div class="services-container">
+                <button class="other-services" id="otherServicesBtn">Other Services</button>
+                <select class="services-select" id="servicesSelect">
+                    <option value="">Select a service</option>
+                    <option value="textToMorse">Text to Morse</option>
+                    <option value="morseToText">Morse to Text</option>
+                </select>
+                <div id="conversionInput" style="display: none; margin-top: 10px;">
+                    <input type="text" class="search-input" placeholder="Enter text to convert" id="textToConvert">
+                    <button class="add-prefix-button" id="convertBtn">Convert</button>
+                </div>
+                <div id="conversionResult" class="conversion-result"></div>
+            </div>
         </div>
-        <div id="description" class="description">Select a prefix to see its use and example.</div>
-        <div id="instructions" class="instructions">
-            You can combine multiple prefixes for more specific searches. For example:<br>
-            <ul>
-                <li><code>site:wikipedia.org intitle:"Climate Change"</code> - Finds pages on Wikipedia with "Climate Change" in the title.</li>
-                <li><code>filetype:pdf intext:"data analysis"</code> - Searches for PDF files that contain "data analysis" in their text.</li>
-                <li><code>related:example.com site:edu</code> - Finds educational sites related to example.com.</li>
-            </ul>
+        
+        <div class="info-container">
+            <div class="info-box">
+                <h3>Uses of the Prefixes</h3>
+                <div id="description">
+                    Select a prefix to see its use and example.
+                </div>
+                <hr>
+                <div id="instructions" class="instructions">
+                    You can combine multiple prefixes for more specific searches. For example:<br>
+                    <ul>
+                        <li><code>site:wikipedia.org intitle:"Climate Change"</code> - Finds pages on Wikipedia with "Climate Change" in the title.</li>
+                        <li><code>filetype:pdf intext:"data analysis"</code> - Searches for PDF files that contain "data analysis" in their text.</li>
+                        <li><code>related:example.com site:edu</code> - Finds educational sites related to example.com.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="signature">
+                © A.A.D.A.
+            </div>
         </div>
-        <div class="signature">By A.A.D.A.</div>
     </div>
-    <script>
-        document.getElementById('searchForm').addEventListener('submit', function(event) {
-            event.preventDefault();
 
+    <script>
+        // Create animated particles for the background
+        function createParticles() {
+            const particles = document.querySelector('.particles');
+            for (let i = 0; i < 10; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                const size = Math.random() * 100 + 50;
+                const top = Math.random() * 100;
+                const left = Math.random() * 100;
+                const delay = Math.random() * 10;
+                
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.top = `${top}%`;
+                particle.style.left = `${left}%`;
+                particle.style.animationDelay = `${delay}s`;
+                
+                particles.appendChild(particle);
+            }
+        }
+        
+        // Call the function to create particles
+        createParticles();
+        
+        document.getElementById('searchButton').addEventListener('click', function() {
             let query = document.getElementById('query').value;
             let prefixGroups = document.querySelectorAll('.prefix-group');
             let searchQuery = query;
-
+            
             prefixGroups.forEach(group => {
-                let prefix = group.querySelector('.prefix').value;
-                let prefixValue = group.querySelector('.prefixValueInput').value;
+                let prefix = group.querySelector('.prefix-select').value;
+                let prefixValue = group.querySelector('.prefix-value').value;
                 if (prefix && prefixValue) {
-                    searchQuery = `${prefix}:${prefixValue} ${searchQuery}`;
+                    if (prefix === ':drive.google.com') {
+                        searchQuery = `${prefixValue}${prefix} ${searchQuery}`;
+                    } else {
+                        searchQuery = `${prefix}:${prefixValue} ${searchQuery}`;
+                    }
                 }
             });
-
+            
             window.open(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
         });
-
-        document.getElementById('addPrefixButton').addEventListener('click', function() {
+        
+        document.getElementById('addPrefix').addEventListener('click', function() {
             let prefixContainer = document.getElementById('prefixContainer');
             let newPrefixGroup = document.createElement('div');
             newPrefixGroup.classList.add('prefix-group');
             newPrefixGroup.innerHTML = `
-                <select class="prefix" required>
+                <select class="prefix-select">
                     <option value="">Select a prefix</option>
                     <option value="filetype">Filetype</option>
                     <option value="site">Site</option>
@@ -280,6 +653,7 @@
                     <option value="allinanchor">Allinanchor</option>
                     <option value="link">Link</option>
                     <option value="around">AROUND(x)</option>
+                    <option value=":drive.google.com">FromDrive</option>
                     <option value="info">Info</option>
                     <option value="feed">Feed</option>
                     <option value="mimetype">Mimetype</option>
@@ -287,144 +661,166 @@
                     <option value="before">Before</option>
                     <option value="after">After</option>
                 </select>
-                <div class="prefixValue">
-                    <input type="text" class="prefixValueInput" placeholder="Prefix value" required>
-                    <button type="button" class="remove-prefix">X</button>
-                </div>
+                <input type="text" class="prefix-value" placeholder="Prefix value">
+                <button class="remove-button">×</button>
             `;
             prefixContainer.appendChild(newPrefixGroup);
             updatePrefixListeners();
         });
 
+        function updatePrefixListeners() {
+            document.querySelectorAll('.remove-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    this.closest('.prefix-group').remove();
+                });
+            });
+
+            document.querySelectorAll('.prefix-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    updateDescription(this.closest('.prefix-group'));
+                });
+            });
+        }
+
         function updateDescription(prefixGroup) {
-            let prefix = prefixGroup.querySelector('.prefix').value;
-            let prefixValueInput = prefixGroup.querySelector('.prefixValueInput');
+            let prefix = prefixGroup.querySelector('.prefix-select').value;
             let description = document.getElementById('description');
 
             switch (prefix) {
                 case 'filetype':
-                    prefixValueInput.placeholder = 'e.g., pdf';
                     description.textContent = 'filetype: Searches for files of a specific type. Example: filetype:pdf';
                     break;
                 case 'site':
-                    prefixValueInput.placeholder = 'e.g., wikipedia.org';
                     description.textContent = 'site: Limits results to those from a specific website. Example: site:wikipedia.org';
                     break;
                 case 'intitle':
-                    prefixValueInput.placeholder = 'e.g., "Climate Change"';
                     description.textContent = 'intitle: Finds pages with a specific term in the title. Example: intitle:"Climate Change"';
                     break;
                 case 'inurl':
-                    prefixValueInput.placeholder = 'e.g., research';
                     description.textContent = 'inurl: Searches for pages with a specific term in the URL. Example: inurl:research';
                     break;
                 case 'intext':
-                    prefixValueInput.placeholder = 'e.g., "data analysis"';
                     description.textContent = 'intext: Finds pages with a specific term in the text. Example: intext:"data analysis"';
                     break;
                 case 'related':
-                    prefixValueInput.placeholder = 'e.g., example.com';
                     description.textContent = 'related: Finds sites related to a specific URL. Example: related:example.com';
                     break;
                 case 'define':
-                    prefixValueInput.placeholder = 'e.g., algorithm';
                     description.textContent = 'define: Provides the definition of a word. Example: define:algorithm';
                     break;
                 case 'cache':
-                    prefixValueInput.placeholder = 'e.g., example.com';
                     description.textContent = 'cache: Shows the cached version of a site. Example: cache:example.com';
                     break;
                 case 'source':
-                    prefixValueInput.placeholder = 'e.g., bbc';
                     description.textContent = 'source: Finds news from a specific source. Example: source:bbc';
                     break;
                 case 'src':
-                    prefixValueInput.placeholder = 'e.g., example.com';
                     description.textContent = 'src: Similar to source, used for finding specific sources. Example: src:example.com';
                     break;
                 case 'weather':
-                    prefixValueInput.placeholder = 'e.g., New York';
                     description.textContent = 'weather: Shows the weather for a specific location. Example: weather:New York';
                     break;
                 case 'map':
-                    prefixValueInput.placeholder = 'e.g., Paris';
                     description.textContent = 'map: Shows the map for a specific location. Example: map:Paris';
                     break;
                 case 'location':
-                    prefixValueInput.placeholder = 'e.g., restaurant';
                     description.textContent = 'location: Searches for places near a specific location. Example: location:restaurant';
                     break;
                 case 'type':
-                    prefixValueInput.placeholder = 'e.g., video';
                     description.textContent = 'type: Searches for specific types of media. Example: type:video';
                     break;
                 case 'allintitle':
-                    prefixValueInput.placeholder = 'e.g., "data science"';
                     description.textContent = 'allintitle: Finds pages where all terms are in the title. Example: allintitle:"data science"';
                     break;
                 case 'allinurl':
-                    prefixValueInput.placeholder = 'e.g., research papers';
                     description.textContent = 'allinurl: Finds pages where all terms are in the URL. Example: allinurl:research papers';
                     break;
                 case 'allintext':
-                    prefixValueInput.placeholder = 'e.g., quantum computing';
                     description.textContent = 'allintext: Finds pages where all terms are in the text. Example: allintext:quantum computing';
                     break;
                 case 'allinanchor':
-                    prefixValueInput.placeholder = 'e.g., data mining';
                     description.textContent = 'allinanchor: Finds pages where all terms are in the anchor text. Example: allinanchor:data mining';
                     break;
                 case 'link':
-                    prefixValueInput.placeholder = 'e.g., example.com';
                     description.textContent = 'link: Finds pages that link to a specific URL. Example: link:example.com';
                     break;
                 case 'around':
-                    prefixValueInput.placeholder = 'e.g., 5';
                     description.textContent = 'AROUND(x): Finds terms within x words of each other. Example: AROUND(5):"climate change" "policy"';
                     break;
+                case ':drive.google.com':
+                    description.textContent = 'FromDrive: Finds the desired topic from Google Drive (if available)';
+                    break;
                 case 'info':
-                    prefixValueInput.placeholder = 'e.g., example.com';
                     description.textContent = 'info: Shows information about a specific URL. Example: info:example.com';
                     break;
                 case 'feed':
-                    prefixValueInput.placeholder = 'e.g., technology';
                     description.textContent = 'feed: Searches for RSS feeds related to a topic. Example: feed:technology';
                     break;
                 case 'mimetype':
-                    prefixValueInput.placeholder = 'e.g., application/pdf';
                     description.textContent = 'mimetype: Searches for a specific MIME type. Example: mimetype:application/pdf';
                     break;
                 case 'name':
-                    prefixValueInput.placeholder = 'e.g., John Doe';
                     description.textContent = 'name: Searches for a specific name. Example: name:John Doe';
                     break;
                 case 'before':
-                    prefixValueInput.placeholder = 'e.g., 2021';
                     description.textContent = 'before: Limits results to those published before a specific date. Example: before:2021';
                     break;
                 case 'after':
-                    prefixValueInput.placeholder = 'e.g., 2021';
                     description.textContent = 'after: Limits results to those published after a specific date. Example: after:2021';
                     break;
                 default:
-                    prefixValueInput.placeholder = 'Prefix value';
                     description.textContent = 'Select a prefix to see its use and example.';
                     break;
             }
         }
 
-        function updatePrefixListeners() {
-            document.querySelectorAll('.prefix').forEach(select => {
-                select.addEventListener('change', function() {
-                    updateDescription(this.closest('.prefix-group'));
-                });
-            });
+        document.getElementById('otherServicesBtn').addEventListener('click', function() {
+            const servicesSelect = document.getElementById('servicesSelect');
+            servicesSelect.style.display = servicesSelect.style.display === 'none' ? 'block' : 'none';
+        });
 
-            document.querySelectorAll('.remove-prefix').forEach(button => {
-                button.addEventListener('click', function() {
-                    this.closest('.prefix-group').remove();
-                });
-            });
+        document.getElementById('servicesSelect').addEventListener('change', function() {
+            const conversionInput = document.getElementById('conversionInput');
+            conversionInput.style.display = this.value ? 'block' : 'none';
+        });
+
+        document.getElementById('convertBtn').addEventListener('click', function() {
+            const textToConvert = document.getElementById('textToConvert').value;
+            const selectedService = document.getElementById('servicesSelect').value;
+            const conversionResult = document.getElementById('conversionResult');
+
+            if (selectedService === 'textToMorse') {
+                conversionResult.textContent = textToMorse(textToConvert);
+            } else if (selectedService === 'morseToText') {
+                conversionResult.textContent = morseToText(textToConvert);
+            }
+            conversionResult.style.display = 'block';
+        });
+
+        // Morse Code Conversion Logic
+        const morseCodeMap = {
+            'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 
+            'F': '..-.', 'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 
+            'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---', 
+            'P': '.--.', 'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-', 
+            'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-', 'Y': '-.--', 
+            'Z': '--..', '1': '.----', '2': '..---', '3': '...--', 
+            '4': '....-', '5': '.....', '6': '-....', '7': '--...', 
+            '8': '---..', '9': '----.', '0': '-----', ' ': '/',
+            '.': '.-.-.-', ',': '--..--', '?': '..--..', "'": '.----.', 
+            '!': '-.-.--', '/': '-..-.', '(': '-.--.', ')': '-.--.-', 
+            '&': '.-...', ':': '---...', ';': '-.-.-.', '=': '-...-', 
+            '+': '.-.-.', '-': '-....-', '_': '..--.-', '"': '.-..-.', 
+            '$': '...-..-', '@': '.--.-.'
+        };
+
+        function textToMorse(text) {
+            return text.toUpperCase().split('').map(char => morseCodeMap[char] || '').join(' ');
+        }
+
+        function morseToText(morse) {
+            const reverseMorseCodeMap = Object.fromEntries(Object.entries(morseCodeMap).map(([k, v]) => [v, k]));
+            return morse.split(' ').map(code => reverseMorseCodeMap[code] || '').join('');
         }
 
         // Initial call to set up event listeners
