@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AADA Search</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #0d0d12;
+      --surface:  #13131c;
+      --card:     #18182480;
+      --border:   rgba(255,255,255,0.07);
+      --border-active: rgba(99,102,241,0.6);
+      --text:     #e8e8f0;
+      --muted:    #6b6b80;
+      --accent:   #6366f1;
+      --accent-2: #8b5cf6;
+      --danger:   #ef4444;
+      --success:  #10b981;
+      --radius:   14px;
+      --radius-sm:8px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* ── Background texture ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 10%, rgba(99,102,241,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 85% 80%, rgba(139,92,246,0.06) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── App Shell ── */
+    #app {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 16px 20px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .brand-icon svg { width: 18px; height: 18px; }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--text);
+    }
+
+    .brand-sub {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* Info panel toggle */
+    .header-btn {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .header-btn:active { opacity: 0.7; }
+    .header-btn.active { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Tab Bar ── */
+    .tab-bar {
+      display: flex;
+      padding: 0 20px;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px 4px;
+      text-align: center;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Scrollable content ── */
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 20px 20px calc(80px + var(--safe-bottom));
+    }
+
+    .content-area::-webkit-scrollbar { display: none; }
+
+    /* ── Panel ── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      margin-top: 20px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    /* ── Query preview pill ── */
+    .query-preview {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      word-break: break-all;
+      line-height: 1.5;
+      min-height: 38px;
+      margin-bottom: 4px;
+      transition: border-color 0.2s;
+    }
+    .query-preview:not(:empty) { border-color: rgba(99,102,241,0.25); }
+
+    /* ── Input ── */
+    .field {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .field::placeholder { color: var(--muted); }
+    .field:focus {
+      border-color: var(--border-active);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+    select.field {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b80' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+    select.field option { background: #1e1e2e; }
+
+    /* ── Prefix card ── */
+    .prefix-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 10px;
+      position: relative;
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .prefix-card .card-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .prefix-card .card-row:first-child { margin-top: 0; }
+
+    .prefix-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .remove-btn {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      border: 1px solid rgba(239,68,68,0.2);
+      background: rgba(239,68,68,0.08);
+      color: var(--danger);
+      font-size: 16px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .remove-btn:active { background: rgba(239,68,68,0.2); }
+
+    /* ── Hint text ── */
+    .prefix-hint {
+      font-size: 11.5px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 6px;
+      padding: 8px 10px;
+      background: rgba(99,102,241,0.06);
+      border-radius: var(--radius-sm);
+      border-left: 2px solid rgba(99,102,241,0.3);
+    }
+    .prefix-hint:empty { display: none; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius);
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-ghost {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-ghost:active { background: rgba(255,255,255,0.05); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+    }
+    .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+
+    /* ── Bottom Search Bar ── */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      padding: 12px 20px calc(12px + var(--safe-bottom));
+      background: linear-gradient(to top, var(--bg) 70%, transparent);
+      z-index: 10;
+    }
+
+    .search-btn {
+      width: 100%;
+      padding: 15px;
+      border-radius: var(--radius);
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .search-btn:active { opacity: 0.85; transform: scale(0.98); }
+
+    /* ── Info panel ── */
+    .info-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+    }
+    .info-overlay.open { display: flex; flex-direction: column; }
+
+    .info-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+    }
+
+    .info-sheet {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: #1a1a26;
+      border-radius: 20px 20px 0 0;
+      border-top: 1px solid var(--border);
+      padding: 0 0 calc(24px + var(--safe-bottom));
+      max-height: 80vh;
+      overflow-y: auto;
+      animation: sheetUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    @keyframes sheetUp {
+      from { transform: translateX(-50%) translateY(100%); }
+      to   { transform: translateX(-50%) translateY(0); }
+    }
+
+    .sheet-handle {
+      width: 36px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 14px auto 0;
+    }
+
+    .sheet-header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sheet-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .sheet-close {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 14px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .sheet-body { padding: 20px; }
+
+    .info-block {
+      margin-bottom: 20px;
+    }
+
+    .info-block h4 {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .current-desc {
+      font-size: 13.5px;
+      color: var(--text);
+      line-height: 1.6;
+      padding: 12px 14px;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+    .current-desc:empty::after { content: 'Select a prefix to see its description and example.'; color: var(--muted); font-style: italic; }
+
+    .example-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+
+    .example-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: #a0a0b8;
+    }
+
+    .example-item code {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      margin-bottom: 4px;
+      background: rgba(99,102,241,0.1);
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    /* ── Morse result ── */
+    .morse-result {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--success);
+      word-break: break-all;
+      line-height: 1.6;
+      display: none;
+      margin-top: 12px;
+      position: relative;
+    }
+
+    .copy-hint {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .copy-hint.copied { color: var(--success); }
+
+    /* ── Chip group (services toggle) ── */
+    .chip-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .chip {
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .chip.active {
+      background: rgba(99,102,241,0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Tag strip (selected prefix tags) ── */
+    .prefix-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 32px 20px;
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+    .empty-state svg { margin-bottom: 12px; opacity: 0.3; }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    /* ── Copyright ── */
+    .copyright {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      padding: 8px 0 4px;
+      letter-spacing: 1px;
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="8" y1="11" x2="14" y2="11"/>
+          <line x1="11" y1="8" x2="11" y2="14"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">Search</span>
+        <span class="brand-sub">A.A.D.A</span>
+      </div>
+    </div>
+    <button class="header-btn" id="infoToggle" aria-label="Info">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="16" x2="12" y2="12"/>
+        <line x1="12" y1="8" x2="12.01" y2="8"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <div class="tab active" data-panel="search">
+      Search
+    </div>
+    <div class="tab" data-panel="services">
+      Tools
+    </div>
+  </div>
+
+  <!-- Scrollable Content -->
+  <div class="content-area">
+
+    <!-- ── SEARCH PANEL ── -->
+    <div class="panel active" id="panel-search">
+
+      <div class="section-label">Query Preview</div>
+      <div class="query-preview" id="queryPreview"></div>
+
+      <div class="section-label" style="margin-top:16px;">Search Terms</div>
+      <input type="text" class="field" id="query" placeholder="Enter your search query…" autocomplete="off" autocorrect="off" spellcheck="false">
+
+      <div class="section-label" style="margin-top:16px;">
+        Operators
+        <span class="prefix-count" id="prefixCount" style="display:none">0</span>
+      </div>
+
+      <div id="prefixContainer"></div>
+
+      <button class="btn btn-ghost" id="addPrefix" style="margin-top:4px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Operator
+      </button>
+
+      <div class="divider"></div>
+      <div class="copyright">© A.A.D.A.</div>
+
+    </div>
+
+    <!-- ── TOOLS PANEL ── -->
+    <div class="panel" id="panel-services">
+
+      <div class="section-label">Converter</div>
+
+      <div class="chip-row" id="serviceChips">
+        <div class="chip" data-value="textToMorse">Text → Morse</div>
+        <div class="chip" data-value="morseToText">Morse → Text</div>
+      </div>
+
+      <div id="conversionInput" style="display:none;">
+        <input type="text" class="field" id="textToConvert" placeholder="Enter text to convert…" autocomplete="off" spellcheck="false">
+        <button class="btn btn-primary" id="convertBtn" style="margin-top:10px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+            <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+          </svg>
+          Convert
+        </button>
+        <div id="conversionResult" class="morse-result"></div>
+        <div class="copy-hint" id="copyHint" style="display:none;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Tap to copy
+        </div>
+      </div>
+
+      <div id="noServiceSelected" class="empty-state">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" display="block" style="margin:0 auto 12px">
+          <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+          <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+        </svg>
+        Pick a conversion type above to get started.
+      </div>
+
+      <div class="divider"></div>
+      <div class="copyright">© A.A.D.A.</div>
+
+    </div>
+
+  </div><!-- .content-area -->
+
+  <!-- Bottom Bar -->
+  <div class="bottom-bar" id="bottomBar">
+    <button class="search-btn" id="searchButton">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      Search Google
+    </button>
+  </div>
+
+</div><!-- #app -->
+
+<!-- Info Bottom Sheet -->
+<div class="info-overlay" id="infoOverlay">
+  <div class="info-backdrop" id="infoBackdrop"></div>
+  <div class="info-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title">Operator Reference</span>
+      <div class="sheet-close" id="infoClose">✕</div>
+    </div>
+    <div class="sheet-body">
+      <div class="info-block">
+        <h4>Selected Operator</h4>
+        <div class="current-desc" id="description"></div>
+      </div>
+      <div class="info-block">
+        <h4>Combination Examples</h4>
+        <ul class="example-list">
+          <li class="example-item">
+            <code>site:wikipedia.org intitle:"Climate Change"</code>
+            Finds Wikipedia pages with "Climate Change" in the title.
+          </li>
+          <li class="example-item">
+            <code>filetype:pdf intext:"data analysis"</code>
+            PDF files containing "data analysis" in their text.
+          </li>
+          <li class="example-item">
+            <code>related:example.com site:edu</code>
+            Educational sites related to example.com.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ─── OPERATOR DEFINITIONS ─── */
+  const OPERATORS = [
+    { value: '', label: 'Select operator' },
+    { value: 'filetype',    label: 'filetype',    desc: 'Searches for files of a specific type. Example: filetype:pdf' },
+    { value: 'site',        label: 'site',        desc: 'Limits results to those from a specific website. Example: site:wikipedia.org' },
+    { value: 'intitle',     label: 'intitle',     desc: 'Finds pages with a specific term in the title. Example: intitle:"Climate Change"' },
+    { value: 'inurl',       label: 'inurl',       desc: 'Searches for pages with a specific term in the URL. Example: inurl:research' },
+    { value: 'intext',      label: 'intext',      desc: 'Finds pages with a specific term in the text. Example: intext:"data analysis"' },
+    { value: 'related',     label: 'related',     desc: 'Finds sites related to a specific URL. Example: related:example.com' },
+    { value: 'define',      label: 'define',      desc: 'Provides the definition of a word. Example: define:algorithm' },
+    { value: 'cache',       label: 'cache',       desc: 'Shows the cached version of a site. Example: cache:example.com' },
+    { value: 'source',      label: 'source',      desc: 'Finds news from a specific source. Example: source:bbc' },
+    { value: 'src',         label: 'src',         desc: 'Similar to source, used for finding specific sources. Example: src:example.com' },
+    { value: 'weather',     label: 'weather',     desc: 'Shows the weather for a specific location. Example: weather:New York' },
+    { value: 'map',         label: 'map',         desc: 'Shows the map for a specific location. Example: map:Paris' },
+    { value: 'location',    label: 'location',    desc: 'Searches for places near a specific location. Example: location:restaurant' },
+    { value: 'type',        label: 'type',        desc: 'Searches for specific types of media. Example: type:video' },
+    { value: 'allintitle',  label: 'allintitle',  desc: 'Finds pages where all terms are in the title. Example: allintitle:"data science"' },
+    { value: 'allinurl',    label: 'allinurl',    desc: 'Finds pages where all terms are in the URL. Example: allinurl:research papers' },
+    { value: 'allintext',   label: 'allintext',   desc: 'Finds pages where all terms are in the text. Example: allintext:quantum computing' },
+    { value: 'allinanchor', label: 'allinanchor', desc: 'Finds pages where all terms are in the anchor text. Example: allinanchor:data mining' },
+    { value: 'link',        label: 'link',        desc: 'Finds pages that link to a specific URL. Example: link:example.com' },
+    { value: 'around',      label: 'AROUND(x)',   desc: 'Finds terms within x words of each other. Example: AROUND(5):"climate change" "policy"' },
+    { value: ':drive.google.com', label: 'FromDrive', desc: 'Finds the desired topic from Google Drive (if available)' },
+    { value: 'info',        label: 'info',        desc: 'Shows information about a specific URL. Example: info:example.com' },
+    { value: 'feed',        label: 'feed',        desc: 'Searches for RSS feeds related to a topic. Example: feed:technology' },
+    { value: 'mimetype',    label: 'mimetype',    desc: 'Searches for a specific MIME type. Example: mimetype:application/pdf' },
+    { value: 'name',        label: 'name',        desc: 'Searches for a specific name. Example: name:John Doe' },
+    { value: 'before',      label: 'before',      desc: 'Limits results to those published before a specific date. Example: before:2021' },
+    { value: 'after',       label: 'after',       desc: 'Limits results to those published after a specific date. Example: after:2021' },
+  ];
+
+  function optionsHTML(selectedVal = '') {
+    return OPERATORS.map(op =>
+      `<option value="${op.value}" ${op.value === selectedVal ? 'selected' : ''}>${op.label}</option>`
+    ).join('');
+  }
+
+  /* ─── PREFIX CARDS ─── */
+  function createPrefixCard(selectVal = '', inputVal = '') {
+    const div = document.createElement('div');
+    div.className = 'prefix-card';
+    div.innerHTML = `
+      <div class="card-row" style="justify-content:space-between; align-items:center;">
+        <span class="prefix-badge">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></svg>
+          Operator
+        </span>
+        <button class="remove-btn" title="Remove">×</button>
+      </div>
+      <select class="field prefix-select">${optionsHTML(selectVal)}</select>
+      <div class="card-row" style="margin-top:8px;">
+        <input type="text" class="field prefix-value" placeholder="Value" value="${inputVal}" autocomplete="off" style="flex:1;">
+      </div>
+      <div class="prefix-hint"></div>
+    `;
+    div.querySelector('.remove-btn').addEventListener('click', () => {
+      div.style.opacity = '0';
+      div.style.transform = 'translateX(10px)';
+      div.style.transition = 'all 0.18s';
+      setTimeout(() => { div.remove(); updateQueryPreview(); updatePrefixCount(); }, 180);
+    });
+    const sel = div.querySelector('.prefix-select');
+    const hint = div.querySelector('.prefix-hint');
+    sel.addEventListener('change', () => {
+      const op = OPERATORS.find(o => o.value === sel.value);
+      hint.textContent = op && op.desc ? op.desc : '';
+      // trigger info panel update
+      if (op && op.desc) document.getElementById('description').textContent = op.desc;
+      updateQueryPreview();
+    });
+    div.querySelector('.prefix-value').addEventListener('input', updateQueryPreview);
+    if (selectVal) {
+      const op = OPERATORS.find(o => o.value === selectVal);
+      if (op && op.desc) hint.textContent = op.desc;
+    }
+    return div;
+  }
+
+  function updatePrefixCount() {
+    const cards = document.querySelectorAll('.prefix-card');
+    const badge = document.getElementById('prefixCount');
+    if (cards.length > 0) {
+      badge.textContent = cards.length;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  /* Initialise with one empty card */
+  document.getElementById('prefixContainer').appendChild(createPrefixCard());
+  updatePrefixCount();
+
+  document.getElementById('addPrefix').addEventListener('click', () => {
+    const card = createPrefixCard();
+    document.getElementById('prefixContainer').appendChild(card);
+    updatePrefixCount();
+    card.querySelector('.prefix-select').focus();
+  });
+
+  /* ─── QUERY PREVIEW ─── */
+  function buildQuery() {
+    let base = document.getElementById('query').value.trim();
+    let parts = [];
+    document.querySelectorAll('.prefix-card').forEach(card => {
+      const prefix = card.querySelector('.prefix-select').value;
+      const val    = card.querySelector('.prefix-value').value.trim();
+      if (prefix && val) {
+        if (prefix === ':drive.google.com') parts.push(`${val}${prefix}`);
+        else parts.push(`${prefix}:${val}`);
+      }
+    });
+    return [parts.join(' '), base].filter(Boolean).join(' ');
+  }
+
+  function updateQueryPreview() {
+    const q = buildQuery();
+    const el = document.getElementById('queryPreview');
+    el.textContent = q || '';
+    el.style.color = q ? '#818cf8' : 'var(--muted)';
+  }
+
+  document.getElementById('query').addEventListener('input', updateQueryPreview);
+
+  /* ─── SEARCH ─── */
+  document.getElementById('searchButton').addEventListener('click', () => {
+    const q = buildQuery();
+    if (!q) { document.getElementById('query').focus(); return; }
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, '_blank');
+  });
+
+  /* ─── TABS ─── */
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+      // hide search btn on tools tab
+      document.getElementById('bottomBar').style.display =
+        tab.dataset.panel === 'search' ? '' : 'none';
+    });
+  });
+
+  /* ─── INFO SHEET ─── */
+  document.getElementById('infoToggle').addEventListener('click', () => {
+    document.getElementById('infoOverlay').classList.add('open');
+    document.getElementById('infoToggle').classList.add('active');
+  });
+  const closeInfo = () => {
+    document.getElementById('infoOverlay').classList.remove('open');
+    document.getElementById('infoToggle').classList.remove('active');
+  };
+  document.getElementById('infoClose').addEventListener('click', closeInfo);
+  document.getElementById('infoBackdrop').addEventListener('click', closeInfo);
+
+  /* ─── SERVICES ─── */
+  let selectedService = '';
+
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      if (selectedService === chip.dataset.value) {
+        selectedService = '';
+        document.getElementById('conversionInput').style.display = 'none';
+        document.getElementById('noServiceSelected').style.display = '';
+        document.getElementById('conversionResult').style.display = 'none';
+        document.getElementById('copyHint').style.display = 'none';
+      } else {
+        chip.classList.add('active');
+        selectedService = chip.dataset.value;
+        document.getElementById('conversionInput').style.display = 'block';
+        document.getElementById('noServiceSelected').style.display = 'none';
+        document.getElementById('textToConvert').placeholder =
+          selectedService === 'textToMorse' ? 'Enter text…' : 'Enter morse code (dots & dashes)…';
+        document.getElementById('conversionResult').style.display = 'none';
+        document.getElementById('copyHint').style.display = 'none';
+      }
+    });
+  });
+
+  /* ─── MORSE ─── */
+  const morseCodeMap = {
+    'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---',
+    'K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-',
+    'U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','1':'.----','2':'..---','3':'...--',
+    '4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','0':'-----',' ':'/',
+    '.':'.-.-.-',',':'--..--','?':'..--..','\'':'.----.','!':'-.-.--','/':'-..-.','(':'-.--.',')'  :'-.--.-',
+    '&':'.-...', ':':'---...',';':'-.-.-.','=':'-...-','+':'.-.-.', '-':'-....-','_':'..--.-','"':'.-..-.','$':'...-..-','@':'.--.-.'
+  };
+
+  function textToMorse(text) {
+    return text.toUpperCase().split('').map(c => morseCodeMap[c] || '').join(' ').trim();
+  }
+
+  function morseToText(morse) {
+    const rev = Object.fromEntries(Object.entries(morseCodeMap).map(([k,v])=>[v,k]));
+    return morse.split(' ').map(code => rev[code] || '').join('');
+  }
+
+  document.getElementById('convertBtn').addEventListener('click', () => {
+    const input = document.getElementById('textToConvert').value;
+    const resultEl = document.getElementById('conversionResult');
+    const copyHint = document.getElementById('copyHint');
+    if (!input || !selectedService) return;
+    let result = '';
+    if (selectedService === 'textToMorse') result = textToMorse(input);
+    else if (selectedService === 'morseToText') result = morseToText(input);
+    resultEl.textContent = result;
+    resultEl.style.display = 'block';
+    copyHint.style.display = 'flex';
+    copyHint.classList.remove('copied');
+    copyHint.querySelector('span') && (copyHint.querySelector('span').textContent = 'Tap to copy');
+  });
+
+  document.getElementById('copyHint').addEventListener('click', () => {
+    const text = document.getElementById('conversionResult').textContent;
+    navigator.clipboard?.writeText(text).then(() => {
+      const el = document.getElementById('copyHint');
+      el.classList.add('copied');
+      el.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+      setTimeout(() => {
+        el.classList.remove('copied');
+        el.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Tap to copy`;
+      }, 2000);
+    });
+  });
+</script>
+</body>
+</html>
