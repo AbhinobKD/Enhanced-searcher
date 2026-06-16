@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SearchEnhancer - Precision Query Instrument</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #020204;
+      --bloom: radial-gradient(ellipse at 50% 30%, rgba(99, 102, 241, 0.12) 0%, rgba(2, 2, 4, 1) 65%);
+      --surface: rgba(255, 255, 255, 0.03);
+      --surface-hover: rgba(255, 255, 255, 0.06);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(129, 140, 248, 0.5);
+      --text-main: #ffffff;
+      --text-muted: #8b8b9f;
+      --accent: #818cf8;
+      --radius: 18px;
+      --radius-sm: 10px;
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      -webkit-tap-highlight-color: transparent; 
+    }
+
+    body, html {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: var(--bloom);
+      z-index: 0; pointer-events: none;
+    }
+
+    .instrument-container {
+      position: relative; z-index: 1;
+      min-height: 100%; width: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 20px; max-width: 760px; margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .brand-wrapper { text-align: center; margin-bottom: 4vh; animation: fadeInDown 0.8s ease-out; user-select: none; }
+    .brand-title {
+      font-size: 32px; font-weight: 700; letter-spacing: -1.2px;
+      background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 2px;
+    }
+    .brand-title .dot { color: var(--accent); -webkit-text-fill-color: var(--accent); }
+    .brand-subtitle { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--text-muted); text-transform: uppercase; font-weight: 500; }
+
+    /* ── Live Query & Helper Bar ── */
+    .query-header { width: 100%; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; animation: fadeIn 1s ease-out 0.2s both; }
+    .live-query-bar {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      background: rgba(0,0,0,0.2); padding: 12px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    }
+    .live-query-text { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent); line-height: 1.5; word-break: break-all; flex: 1; min-height: 20px; }
+    .prompt-symbol { color: var(--text-muted); margin-right: 8px; user-select: none; }
+    .cursor { display: inline-block; width: 8px; height: 15px; background-color: var(--accent); animation: blink 1s step-end infinite; vertical-align: middle; margin-left: 4px; }
+    
+    .copy-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--text-muted); width: 30px; height: 30px; border-radius: 6px;
+      display: grid; place-items: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+    }
+    .copy-btn:hover { background: var(--surface-hover); color: var(--text-main); }
+    .copy-btn.copied { color: #10b981; border-color: rgba(16, 185, 129, 0.3); }
+
+    /* Dismissible Hint */
+    .operator-hint-wrapper {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+      font-size: 12px; color: #a5b4fc; min-height: 18px; transition: opacity 0.2s, max-height 0.2s;
+      opacity: 0; max-height: 0; overflow: hidden; background: rgba(129, 140, 248, 0.05);
+      border: 1px solid rgba(129, 140, 248, 0.2); border-radius: var(--radius-sm); padding: 0 12px;
+    }
+    .operator-hint-wrapper.visible { opacity: 1; max-height: 100px; padding: 10px 12px; margin-bottom: 8px; }
+    .hint-content { display: flex; align-items: flex-start; gap: 8px; line-height: 1.4; }
+    .hint-close {
+      background: transparent; border: none; color: #a5b4fc; opacity: 0.6; cursor: pointer;
+      padding: 2px; display: grid; place-items: center; transition: opacity 0.2s;
+    }
+    .hint-close:hover { opacity: 1; color: #fff; }
+
+    /* ── Main Search ── */
+    .search-wrapper { width: 100%; position: relative; margin-bottom: 24px; animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
+    .search-input {
+      width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 26px 130px 26px 26px; font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 400; color: var(--text-main);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); outline: none; transition: all 0.3s; box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .search-input::placeholder { color: #4b5563; }
+    .search-input:focus { border-color: var(--border-focus); background: rgba(255, 255, 255, 0.05); box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 4px rgba(129, 140, 248, 0.15); }
+    .search-input.error { animation: shake 0.4s ease-in-out; border-color: #ef4444; }
+
+    .search-actions { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; gap: 8px; align-items: center; }
+    .exact-toggle {
+      width: 40px; height: 40px; border-radius: 12px; background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; display: grid; place-items: center; cursor: pointer; transition: all 0.2s;
+    }
+    .exact-toggle:hover { background: var(--surface-hover); color: var(--text-main); }
+    .exact-toggle.active { background: rgba(129, 140, 248, 0.15); color: var(--accent); border-color: var(--border-focus); }
+    
+    .execute-btn {
+      width: 50px; height: 50px; border-radius: 14px; background: linear-gradient(135deg, var(--accent), #6366f1); border: none; color: #fff;
+      display: grid; place-items: center; cursor: pointer; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); transition: all 0.2s;
+    }
+    .execute-btn:hover { filter: brightness(1.1); transform: scale(1.03); }
+    .execute-btn:active { transform: scale(0.95); box-shadow: none; }
+
+    /* ── Engine Selector ── */
+    .engines-strip { display: flex; gap: 8px; width: 100%; flex-wrap: wrap; margin-bottom: 24px; justify-content: center; animation: fadeIn 0.6s ease-out 0.3s both; }
+    .engine-pill {
+      background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 8px 16px; border-radius: 20px;
+      font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+    }
+    .engine-pill:hover { background: var(--surface); color: var(--text-main); }
+    .engine-pill.active { background: rgba(129, 140, 248, 0.1); color: var(--accent); border-color: var(--border-focus); }
+
+    /* ── Actions Row ── */
+    .controls-row { display: flex; gap: 10px; width: 100%; margin-bottom: 12px; flex-wrap: wrap; }
+    .action-btn {
+      background: transparent; border: 1px dashed var(--border); color: var(--text-muted); padding: 10px 16px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center;
+    }
+    .action-btn:hover { color: var(--text-main); border-color: var(--text-muted); background: var(--surface); }
+
+    /* ── Active Operators ── */
+    .active-operators { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; justify-content: flex-start; min-height: 40px; }
+    .op-pill {
+      display: flex; align-items: center; background: #0d0d12; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden;
+      animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .op-label { padding: 10px 12px; font-size: 12.5px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); background: rgba(255,255,255,0.02); border-right: 1px solid var(--border); }
+    .op-input { background: transparent; border: none; color: var(--text-main); padding: 10px 12px; font-size: 13.5px; outline: none; min-width: 100px; font-family: 'Inter', sans-serif; }
+    .op-input::placeholder { color: #4b5563; font-style: italic; }
+    .op-input:focus { background: rgba(129, 140, 248, 0.05); }
+    .op-remove { padding: 10px 12px; background: transparent; border: none; border-left: 1px solid var(--border); color: var(--text-muted); cursor: pointer; transition: all 0.2s; display: grid; place-items: center; }
+    .op-remove:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+    /* ── Bottom Sheets ── */
+    .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    .sheet-overlay.active { opacity: 1; pointer-events: auto; }
+    .bottom-sheet {
+      position: fixed; bottom: 0; left: 0; width: 100%; background: #09090c; border-top: 1px solid var(--border);
+      border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 20px 20px calc(24px + var(--safe-bottom));
+      z-index: 101; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); max-height: 85vh; display: flex; flex-direction: column;
+    }
+    .bottom-sheet.active { transform: translateY(0); box-shadow: 0 -10px 50px rgba(0,0,0,0.5); }
+    .sheet-handle { width: 48px; height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; margin: 0 auto 20px; }
+    .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; max-width: 760px; margin-left: auto; margin-right: auto; width: 100%; }
+    .sheet-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .sheet-close { background: transparent; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 4px; }
+    .sheet-content { overflow-y: auto; flex: 1; max-width: 760px; margin: 0 auto; width: 100%; padding-bottom: 20px; }
+    
+    /* Sheet Inner Layouts */
+    .op-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .op-card { background: var(--surface); border: 1px solid var(--border); padding: 14px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 6px; }
+    .op-card:hover { background: var(--surface-hover); border-color: var(--border-focus); transform: translateY(-2px); }
+    .op-card-title { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; color: var(--text-main); font-weight: 700; }
+    .op-card-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+    .tpl-list { display: flex; flex-direction: column; gap: 10px; }
+    .tpl-card { background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; }
+    .tpl-card:hover { background: var(--surface-hover); border-color: var(--accent); }
+    .tpl-title { font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 6px; }
+    .tpl-preview { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); opacity: 0.9; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; display: inline-block; }
+
+    .guide-section { margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 20px; }
+    .guide-section h3 { color: var(--text-main); font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .guide-section p { color: var(--text-muted); font-size: 13.5px; line-height: 1.6; margin-bottom: 12px; }
+    .guide-section ul { list-style: none; padding: 0; }
+    .guide-section li { color: #a5b4fc; font-size: 13px; margin-bottom: 8px; padding-left: 14px; position: relative; font-family: 'JetBrains Mono', monospace; }
+    .guide-section li::before { content: '→'; position: absolute; left: 0; color: var(--text-muted); }
+
+    /* Animations */
+    @keyframes blink { 50% { opacity: 0; } }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.92) translateY(4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    @media (max-width: 600px) {
+      .search-input { font-size: 18px; padding: 22px 110px 22px 18px; }
+      .execute-btn, .exact-toggle { width: 42px; height: 42px; }
+      .engines-strip { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; justify-content: flex-start; scroll-snap-type: x mandatory; }
+      .engine-pill { white-space: nowrap; scroll-snap-align: start; }
+      .engines-strip::-webkit-scrollbar { display: none; }
+      .controls-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <datalist id="common-exts">
+    <option value="pdf"></option><option value="csv"></option><option value="sql"></option>
+    <option value="json"></option><option value="xml"></option><option value="log"></option>
+    <option value="env"></option><option value="xlsx"></option><option value="bak"></option>
+  </datalist>
+
+  <div class="instrument-container">
+    
+    <div class="brand-wrapper">
+      <h1 class="brand-title">SearchEnhancer<span class="dot">.</span></h1>
+      <div class="brand-subtitle">Advanced Query Assembly</div>
+    </div>
+
+    <div class="query-header">
+      <div class="live-query-bar">
+        <div class="live-query-text">
+          <span class="prompt-symbol">❯</span>
+          <span id="liveQueryText"></span><span class="cursor"></span>
+        </div>
+        <button class="copy-btn" id="copyBtn" title="Copy Query">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        </button>
+      </div>
+
+      <div class="operator-hint-wrapper" id="operatorHint">
+        <div class="hint-content">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <span id="hintText">Focus an operator to view its description.</span>
+        </div>
+        <button class="hint-close" id="closeHintBtn" title="Dismiss">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="search-wrapper">
+      <input type="text" id="mainSearch" class="search-input" placeholder="Initiate target query..." autocomplete="off" spellcheck="false" autofocus>
+      <div class="search-actions">
+        <button class="exact-toggle" id="exactToggle" title="Toggle Exact Match (Strict String)">"</button>
+        <button class="execute-btn" id="executeBtn" title="Execute Deep Search">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="engines-strip" id="engineStrip">
+      <button class="engine-pill active" data-engine="google">Google</button>
+      <button class="engine-pill" data-engine="bing">Bing</button>
+      <button class="engine-pill" data-engine="duckduckgo">DuckDuckGo</button>
+      <button class="engine-pill" data-engine="scholar">Scholar</button>
+      <button class="engine-pill" data-engine="reddit">Reddit</button>
+      <button class="engine-pill" data-engine="github">GitHub</button>
+      <button class="engine-pill" data-engine="shodan">Shodan</button>
+      <button class="engine-pill" data-engine="wayback">Archive.org</button>
+    </div>
+
+    <div class="controls-row">
+      <button class="action-btn" id="openOpSheetBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add Filter Array
+      </button>
+      <button class="action-btn" id="openTplSheetBtn" style="border-style: solid; background: rgba(255,255,255,0.02);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Dork Templates
+      </button>
+      <button class="action-btn" id="openGuideSheetBtn" style="border-style: solid; background: rgba(255,255,255,0.02);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> Deep Search Guides
+      </button>
+    </div>
+
+    <div class="active-operators" id="activeOperators"></div>
+  </div>
+
+  <div class="sheet-overlay" id="sheetOverlay"></div>
+  <div class="bottom-sheet" id="dataSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title" id="sheetTitle">Title</div>
+      <button class="sheet-close" id="closeSheetBtn">✕</button>
+    </div>
+    <div class="sheet-content" id="sheetContent"></div>
+  </div>
+
+  <script>
+    const ENGINES = {
+      google: { url: 'https://www.google.com/search?q=', append: '&filter=0&num=100' },
+      bing: { url: 'https://www.bing.com/search?q=', append: '' },
+      duckduckgo: { url: 'https://duckduckgo.com/?q=', append: '' },
+      scholar: { url: 'https://scholar.google.com/scholar?q=', append: '' },
+      reddit: { url: 'https://www.reddit.com/search/?q=', append: '' },
+      github: { url: 'https://github.com/search?type=repositories&q=', append: '' },
+      shodan: { url: 'https://www.shodan.io/search?query=', append: '' },
+      wayback: { url: 'https://web.archive.org/web/*/', append: '' }
+    };
+
+    // The Ultimate Exhaustive OSINT Prefix Library
+    const OPERATORS = [
+      { op: 'site:', desc: 'Restricts search results to a specific domain or TLD (e.g., site:edu).' },
+      { op: 'filetype:', desc: 'Finds files with specific extensions (e.g., filetype:pdf).' },
+      { op: 'ext:', desc: 'Strict extension match. Often more precise than filetype.' },
+      { op: 'intitle:', desc: 'Finds pages with a specific word/phrase in the HTML page title.' },
+      { op: 'allintitle:', desc: 'Ensures ALL specified words appear in the HTML title.' },
+      { op: 'inurl:', desc: 'Restricts results to pages containing the string inside the URL.' },
+      { op: 'allinurl:', desc: 'Finds pages where all specified strings appear in the URL.' },
+      { op: 'intext:', desc: 'Searches for a word exclusively within the body text of pages.' },
+      { op: 'allintext:', desc: 'Ensures all query words are found within the body text.' },
+      { op: 'inanchor:', desc: 'Finds pages where the anchor text of links contains the word.' },
+      { op: 'allinanchor:', desc: 'Ensures all query words are found in the anchor text of links.' },
+      { op: 'before:', desc: 'Limits results to indexations before a date (YYYY-MM-DD).' },
+      { op: 'after:', desc: 'Limits results to indexations after a date (YYYY-MM-DD).' },
+      { op: 'related:', desc: 'Finds websites related to a specified domain (e.g., related:github.com).' },
+      { op: 'cache:', desc: 'Retrieves the engine\'s most recently cached version of a website.' },
+      { op: 'source:', desc: 'Limits news search results to a specific news source.' },
+      { op: 'src:', desc: 'Alias for source: (e.g., src:bloomberg).' },
+      { op: 'location:', desc: 'Searches for related information in a specific geographic region.' },
+      { op: 'weather:', desc: 'Displays the current weather for a specified location.' },
+      { op: 'map:', desc: 'Forces map results for a specified location.' },
+      { op: 'define:', desc: 'Forces the search engine to provide a dictionary definition.' },
+      { op: 'link:', desc: 'Finds pages that link to a specific URL (deprecated by Google but works elsewhere).' },
+      { op: 'info:', desc: 'Shows summary information about a specific URL (deprecated by Google).' },
+      { op: 'movie:', desc: 'Searches for information about a specific movie.' },
+      { op: 'stocks:', desc: 'Searches for stock ticker information.' }
+    ];
+
+    const TEMPLATES = [
+      { title: 'Open Directories (General)', base: '', ops: [{ op: 'intitle:', val: '"index of"' }, { op: 'intext:', val: '"parent directory"' }] },
+      { title: 'Open Directories (Media/Audio)', base: '', ops: [{ op: 'intitle:', val: '"index of"' }, { op: 'inurl:', val: 'mp3|flac|wav' }] },
+      { title: 'Exposed Database Configs', base: 'password OR db_password', ops: [{ op: 'ext:', val: 'env' }, { op: 'intext:', val: 'DB_PASSWORD' }] },
+      { title: 'Confidential Gov Documents', base: '"confidential" OR "not for public release"', ops: [{ op: 'site:', val: 'gov' }, { op: 'ext:', val: 'pdf' }] },
+      { title: 'Vulnerable Log Files', base: 'error OR exception', ops: [{ op: 'ext:', val: 'log' }, { op: 'intext:', val: 'stacktrace' }] },
+      { title: 'Exposed SQL Dumps', base: 'insert into users', ops: [{ op: 'ext:', val: 'sql' }, { op: 'intext:', val: 'password' }] },
+      { title: 'Find Subdomains via Exclusion', base: '', ops: [{ op: 'site:', val: '*.*.com' }, { op: 'inurl:', val: '-www' }] },
+      { title: 'Archived Competitor Snapshots', base: '', ops: [{ op: 'cache:', val: 'example.com' }] },
+      { title: 'Public Trello Boards', base: 'jira OR password OR api_key', ops: [{ op: 'site:', val: 'trello.com' }, { op: 'inurl:', val: 'b' }] },
+      { title: 'Exposed FTP Servers', base: '', ops: [{ op: 'intitle:', val: '"index of"' }, { op: 'inurl:', val: 'ftp' }] }
+    ];
+
+    const GUIDES_HTML = `
+      <div class="guide-section">
+        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> The Power of filetype: and ext:</h3>
+        <p>While often used interchangeably, <strong>filetype:</strong> searches by standard MIME types, whereas <strong>ext:</strong> forces a strict text match on the file extension in the URL. This is critical for finding raw developer files that lack proper MIME headers.</p>
+        <ul>
+          <li>ext:env (Exposed environment variables/credentials)</li>
+          <li>ext:sql (Database dumps)</li>
+          <li>ext:bak / ext:old (Forgotten backup files)</li>
+          <li>ext:log (Server or application logs)</li>
+          <li>ext:json (Raw API endpoints or data dumps)</li>
+        </ul>
+      </div>
+      <div class="guide-section">
+        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Archive.org (Wayback Machine) Tips</h3>
+        <p>The Wayback Machine is invaluable for retrieving deleted content, bypassing paywalls, and conducting historical recon. By executing a search through this tool with Archive selected, you bypass Google entirely.</p>
+        <ul>
+          <li>Append an asterisk to view a domain's directory tree: example.com/*</li>
+          <li>Use it to view deleted tweets or posts if the URL is known.</li>
+          <li>Find old versions of API documentation or Terms of Service.</li>
+        </ul>
+      </div>
+      <div class="guide-section">
+        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg> Shodan Reconnaissance</h3>
+        <p>Shodan does not crawl websites like Google; it crawls internet-connected devices (servers, webcams, IoT devices). Standard Google Dorks (like intext:) do not work here. Use Shodan-specific queries:</p>
+        <ul>
+          <li>port:21 Anonymous access allowed</li>
+          <li>product:"Apache Tomcat"</li>
+          <li>os:"windows 7"</li>
+          <li>org:"Company Name"</li>
+        </ul>
+      </div>
+    `;
+
+    // DOM Refs
+    const mainSearch = document.getElementById('mainSearch');
+    const exactToggle = document.getElementById('exactToggle');
+    const liveQueryText = document.getElementById('liveQueryText');
+    const copyBtn = document.getElementById('copyBtn');
+    
+    const operatorHint = document.getElementById('operatorHint');
+    const hintText = document.getElementById('hintText');
+    const closeHintBtn = document.getElementById('closeHintBtn');
+    
+    const activeOperators = document.getElementById('activeOperators');
+    const openOpSheetBtn = document.getElementById('openOpSheetBtn');
+    const openTplSheetBtn = document.getElementById('openTplSheetBtn');
+    const openGuideSheetBtn = document.getElementById('openGuideSheetBtn');
+    
+    const sheetOverlay = document.getElementById('sheetOverlay');
+    const dataSheet = document.getElementById('dataSheet');
+    const sheetTitle = document.getElementById('sheetTitle');
+    const sheetContent = document.getElementById('sheetContent');
+    const closeSheetBtn = document.getElementById('closeSheetBtn');
+    const engineStrip = document.getElementById('engineStrip');
+    const executeBtn = document.getElementById('executeBtn');
+
+    let currentEngine = 'google';
+    let operatorStates = [];
+    let isExactMatch = false;
+    let hintDismissed = false;
+
+    // --- Exact match toggle ---
+    exactToggle.addEventListener('click', () => {
+      isExactMatch = !isExactMatch;
+      exactToggle.classList.toggle('active', isExactMatch);
+      updateLiveQuery();
+    });
+
+    // --- Engine selection ---
+    engineStrip.addEventListener('click', (e) => {
+      if(e.target.classList.contains('engine-pill')) {
+        document.querySelectorAll('.engine-pill').forEach(p => p.classList.remove('active'));
+        e.target.classList.add('active');
+        currentEngine = e.target.dataset.engine;
+      }
+    });
+
+    // --- Hint Logic ---
+    closeHintBtn.addEventListener('click', () => {
+      operatorHint.classList.remove('visible');
+      hintDismissed = true; 
+    });
+
+    function showHint(opStr) {
+      if (hintDismissed) return;
+      const dict = OPERATORS.find(o => o.op === opStr);
+      if (dict) {
+        hintText.innerHTML = `<strong>${dict.op}</strong> ${dict.desc}`;
+        operatorHint.classList.add('visible');
+      }
+    }
+
+    // --- Sheet logic ---
+    const closeSheet = () => {
+      sheetOverlay.classList.remove('active');
+      dataSheet.classList.remove('active');
+    };
+    closeSheetBtn.addEventListener('click', closeSheet);
+    sheetOverlay.addEventListener('click', closeSheet);
+
+    openOpSheetBtn.addEventListener('click', () => {
+      sheetTitle.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Append Operator';
+      sheetContent.innerHTML = '<div class="op-grid"></div>';
+      const grid = sheetContent.querySelector('.op-grid');
+      OPERATORS.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'op-card';
+        card.innerHTML = `<div class="op-card-title">${item.op}</div><div class="op-card-desc">${item.desc}</div>`;
+        card.onclick = () => { addOperator(item.op); closeSheet(); };
+        grid.appendChild(card);
+      });
+      sheetOverlay.classList.add('active');
+      dataSheet.classList.add('active');
+    });
+
+    openTplSheetBtn.addEventListener('click', () => {
+      sheetTitle.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Dork Templates';
+      sheetContent.innerHTML = '<div class="tpl-list"></div>';
+      const list = sheetContent.querySelector('.tpl-list');
+      TEMPLATES.forEach(tpl => {
+        const card = document.createElement('div');
+        card.className = 'tpl-card';
+        const opsPreview = tpl.ops.map(o => `${o.op}${o.val}`).join(' ');
+        card.innerHTML = `<div class="tpl-title">${tpl.title}</div><div class="tpl-preview">${tpl.base} ${opsPreview}</div>`;
+        card.onclick = () => { applyTemplate(tpl); closeSheet(); };
+        list.appendChild(card);
+      });
+      sheetOverlay.classList.add('active');
+      dataSheet.classList.add('active');
+    });
+
+    openGuideSheetBtn.addEventListener('click', () => {
+      sheetTitle.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> Deep Search Guides';
+      sheetContent.innerHTML = GUIDES_HTML;
+      sheetOverlay.classList.add('active');
+      dataSheet.classList.add('active');
+    });
+
+    // --- Template logic ---
+    function applyTemplate(tpl) {
+      mainSearch.value = tpl.base;
+      if (tpl.base.startsWith('"') && tpl.base.endsWith('"')) {
+        isExactMatch = true; exactToggle.classList.add('active');
+        mainSearch.value = tpl.base.replace(/(^"|"$)/g, '');
+      } else {
+        isExactMatch = false; exactToggle.classList.remove('active');
+      }
+      operatorStates = tpl.ops.map(o => ({ id: Date.now() + Math.random(), op: o.op, val: o.val }));
+      renderOperators();
+      updateLiveQuery();
+    }
+
+    // --- Operator logic ---
+    function addOperator(opStr) {
+      const id = Date.now();
+      operatorStates.push({ id, op: opStr, val: '' });
+      renderOperators();
+      updateLiveQuery();
+    }
+
+    function removeOperator(id) {
+      operatorStates = operatorStates.filter(o => o.id !== id);
+      renderOperators();
+      updateLiveQuery();
+      operatorHint.classList.remove('visible');
+    }
+
+    function renderOperators() {
+      activeOperators.innerHTML = '';
+      operatorStates.forEach(state => {
+        const pill = document.createElement('div');
+        pill.className = 'op-pill';
+        
+        const label = document.createElement('div');
+        label.className = 'op-label';
+        label.textContent = state.op;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'op-input';
+        
+        if (state.op === 'filetype:' || state.op === 'ext:') {
+          input.setAttribute('list', 'common-exts'); input.placeholder = 'e.g. pdf';
+        } else if (state.op === 'before:' || state.op === 'after:') {
+          input.placeholder = 'YYYY-MM-DD';
+        } else {
+          input.placeholder = 'value';
+        }
+        
+        input.value = state.val;
+        
+        input.addEventListener('focus', () => showHint(state.op));
+        input.addEventListener('blur', () => operatorHint.classList.remove('visible'));
+        
+        input.addEventListener('input', (e) => {
+          state.val = e.target.value.trim();
+          updateLiveQuery();
+        });
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'op-remove';
+        removeBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+        removeBtn.onclick = () => removeOperator(state.id);
+
+        pill.appendChild(label); pill.appendChild(input); pill.appendChild(removeBtn);
+        activeOperators.appendChild(pill);
+      });
+      
+      const inputs = activeOperators.querySelectorAll('input');
+      if(inputs.length > 0) inputs[inputs.length - 1].focus();
+    }
+
+    // --- Query logic ---
+    function getFullQuery() {
+      let base = mainSearch.value.trim();
+      if (isExactMatch && base.length > 0) base = `"${base}"`;
+      const ops = operatorStates.map(s => s.val ? `${s.op}${s.val.includes(' ') && !s.val.startsWith('"') ? `"${s.val}"` : s.val}` : '').filter(Boolean).join(' ');
+      return [base, ops].filter(Boolean).join(' ');
+    }
+
+    function updateLiveQuery() { liveQueryText.textContent = getFullQuery(); }
+    mainSearch.addEventListener('input', updateLiveQuery);
+
+    copyBtn.addEventListener('click', () => {
+      const text = getFullQuery();
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtn.classList.add('copied');
+        copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+        setTimeout(() => {
+          copyBtn.classList.remove('copied');
+          copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        }, 2000);
+      });
+    });
+
+    // --- Execution ---
+    function executeSearch() {
+      const fullQuery = getFullQuery();
+      if (!fullQuery) {
+        mainSearch.classList.remove('error');
+        void mainSearch.offsetWidth; // Reflow
+        mainSearch.classList.add('error');
+        mainSearch.focus();
+        setTimeout(() => mainSearch.classList.remove('error'), 400);
+        return;
+      }
+      const conf = ENGINES[currentEngine];
+      window.open(`${conf.url}${encodeURIComponent(fullQuery)}${conf.append}`, '_blank');
+    }
+
+    executeBtn.addEventListener('click', executeSearch);
+    mainSearch.addEventListener('keypress', (e) => { if (e.key === 'Enter') executeSearch(); });
+
+  </script>
+</body>
+</html>
