@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SearchEnhancer - Precision Query Instrument</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #020204;
+      --bloom: radial-gradient(ellipse at 50% 30%, rgba(99, 102, 241, 0.12) 0%, rgba(2, 2, 4, 1) 65%);
+      --surface: rgba(255, 255, 255, 0.03);
+      --surface-hover: rgba(255, 255, 255, 0.06);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(129, 140, 248, 0.5);
+      --text-main: #ffffff;
+      --text-muted: #8b8b9f;
+      --accent: #818cf8;
+      --radius: 18px;
+      --radius-sm: 10px;
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body, html {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: var(--bloom);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .instrument-container {
+      position: relative;
+      z-index: 1;
+      min-height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    /* ── Professional Brand Header ── */
+    .brand-wrapper {
+      text-align: center;
+      margin-bottom: 5vh;
+      animation: fadeInDown 0.8s ease-out;
+      user-select: none;
+    }
+    .brand-title {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -1.2px;
+      background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+    .brand-title .dot {
+      color: var(--accent);
+      -webkit-text-fill-color: var(--accent);
+    }
+    .brand-subtitle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    /* ── Live Query Bar ── */
+    .live-query-bar {
+      width: 100%;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      opacity: 0.95;
+      animation: fadeIn 1s ease-out 0.2s both;
+    }
+    .live-query-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13.5px;
+      color: var(--accent);
+      line-height: 1.5;
+      word-break: break-all;
+      flex: 1;
+      min-height: 20px;
+    }
+    .prompt-symbol { color: var(--text-muted); margin-right: 8px; user-select: none; }
+    .cursor {
+      display: inline-block;
+      width: 8px; height: 16px;
+      background-color: var(--accent);
+      animation: blink 1s step-end infinite;
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover { background: var(--surface-hover); color: var(--text-main); }
+    .copy-btn.copied { color: #10b981; border-color: rgba(16, 185, 129, 0.3); }
+
+    /* ── Oversized Main Search ── */
+    .search-wrapper {
+      width: 100%;
+      position: relative;
+      margin-bottom: 28px;
+      animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px 80px 26px 26px;
+      font-family: 'Inter', sans-serif;
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--text-main);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      outline: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .search-input::placeholder { color: #4b5563; }
+    .search-input:focus {
+      border-color: var(--border-focus);
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 4px rgba(129, 140, 248, 0.15);
+    }
+    .search-input.error { animation: shake 0.4s ease-in-out; border-color: #ef4444; }
+
+    .execute-btn {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), #6366f1);
+      border: none;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+      transition: all 0.2s;
+    }
+    .execute-btn:hover { filter: brightness(1.1); transform: translateY(-50%) scale(1.03); }
+    .execute-btn:active { transform: translateY(-50%) scale(0.95); box-shadow: none; }
+
+    /* ── Multi-Engine Selector ── */
+    .engines-strip {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+      justify-content: center;
+      animation: fadeIn 0.6s ease-out 0.3s both;
+    }
+    .engine-pill {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 8px 18px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .engine-pill:hover { background: var(--surface); color: var(--text-main); }
+    .engine-pill.active {
+      background: rgba(129, 140, 248, 0.1);
+      color: var(--accent);
+      border-color: var(--border-focus);
+    }
+
+    /* ── Dynamic Operator Pills ── */
+    .active-operators {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+      justify-content: flex-start;
+      min-height: 40px;
+    }
+    .op-pill {
+      display: flex;
+      align-items: center;
+      background: #0d0d12;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .op-label {
+      padding: 10px 14px;
+      font-size: 12.5px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.02);
+      border-right: 1px solid var(--border);
+    }
+    .op-input {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      padding: 10px 14px;
+      font-size: 13.5px;
+      outline: none;
+      min-width: 100px;
+      font-family: 'Inter', sans-serif;
+    }
+    .op-input::placeholder { color: #4b5563; font-style: italic; }
+    .op-remove {
+      padding: 10px 14px;
+      background: transparent;
+      border: none;
+      border-left: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: grid;
+      place-items: center;
+    }
+    .op-remove:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+    .add-op-btn {
+      background: transparent;
+      border: 1px dashed var(--border);
+      color: var(--text-muted);
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .add-op-btn:hover { color: var(--text-main); border-color: var(--text-muted); background: var(--surface); }
+
+    /* ── Bottom Sheet (Comprehensive Operators) ── */
+    .sheet-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(5px);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .sheet-overlay.active { opacity: 1; pointer-events: auto; }
+
+    .bottom-sheet {
+      position: fixed;
+      bottom: 0; left: 0; width: 100%;
+      background: #09090c;
+      border-top: 1px solid var(--border);
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      padding: 20px 20px calc(24px + var(--safe-bottom));
+      z-index: 101;
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .bottom-sheet.active { transform: translateY(0); box-shadow: 0 -10px 50px rgba(0,0,0,0.5); }
+    
+    .sheet-handle { width: 48px; height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; margin: 0 auto 20px; }
+    
+    .sheet-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; max-width: 720px; margin-left: auto; margin-right: auto; width: 100%;
+    }
+    .sheet-title { font-size: 16px; font-weight: 600; }
+    .sheet-close {
+      background: transparent; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer;
+    }
+
+    .sheet-content {
+      overflow-y: auto; flex: 1; max-width: 720px; margin: 0 auto; width: 100%;
+      padding-bottom: 20px;
+    }
+    .sheet-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+      gap: 10px;
+    }
+    .sheet-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 14px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .sheet-item:hover { background: var(--surface-hover); border-color: var(--border-focus); color: var(--accent); transform: translateY(-1px); }
+
+    /* ── Animations & Utils ── */
+    @keyframes blink { 50% { opacity: 0; } }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.92) translateY(4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    @media (max-width: 600px) {
+      .search-input { font-size: 18px; padding: 22px 64px 22px 20px; }
+      .execute-btn { width: 44px; height: 44px; right: 10px; }
+      .engines-strip { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; justify-content: flex-start; scroll-snap-type: x mandatory; }
+      .engine-pill { white-space: nowrap; scroll-snap-align: start; }
+      .engines-strip::-webkit-scrollbar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Datalist for Hybrid Inputs -->
+  <datalist id="common-exts">
+    <option value="pdf"></option><option value="csv"></option><option value="sql"></option>
+    <option value="json"></option><option value="xml"></option><option value="log"></option>
+    <option value="env"></option><option value="xlsx"></option><option value="docx"></option>
+    <option value="pptx"></option><option value="mp4"></option><option value="mp3"></option>
+    <option value="zip"></option><option value="tar"></option><option value="gz"></option>
+  </datalist>
+
+  <div class="instrument-container">
+    
+    <div class="brand-wrapper">
+      <h1 class="brand-title">SearchEnhancer<span class="dot">.</span></h1>
+      <div class="brand-subtitle">Advanced Query Assembly</div>
+    </div>
+
+    <!-- Live Command Assembly -->
+    <div class="live-query-bar">
+      <div class="live-query-text">
+        <span class="prompt-symbol">❯</span>
+        <span id="liveQueryText"></span><span class="cursor"></span>
+      </div>
+      <button class="copy-btn" id="copyBtn" title="Copy Query to Clipboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </button>
+    </div>
+
+    <!-- Main Search -->
+    <div class="search-wrapper">
+      <input type="text" id="mainSearch" class="search-input" placeholder="Initiate target query..." autocomplete="off" spellcheck="false" autofocus>
+      <button class="execute-btn" id="executeBtn" title="Execute Deep Search">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </button>
+    </div>
+
+    <!-- Multi-Engine Selection -->
+    <div class="engines-strip" id="engineStrip">
+      <button class="engine-pill active" data-engine="google">Google</button>
+      <button class="engine-pill" data-engine="bing">Bing</button>
+      <button class="engine-pill" data-engine="duckduckgo">DuckDuckGo</button>
+      <button class="engine-pill" data-engine="scholar">Scholar</button>
+      <button class="engine-pill" data-engine="youtube">YouTube</button>
+      <button class="engine-pill" data-engine="reddit">Reddit</button>
+      <button class="engine-pill" data-engine="github">GitHub</button>
+      <button class="engine-pill" data-engine="twitter">X (Twitter)</button>
+    </div>
+
+    <!-- Active Operators -->
+    <div class="active-operators" id="activeOperators">
+      <button class="add-op-btn" id="openSheetBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Add Filter
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Bottom Sheet -->
+  <div class="sheet-overlay" id="sheetOverlay"></div>
+  <div class="bottom-sheet" id="operatorSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">Append Operator</div>
+      <button class="sheet-close" id="closeSheetBtn">✕</button>
+    </div>
+    <div class="sheet-content">
+      <div class="sheet-grid" id="sheetGrid">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ENGINES = {
+      google: { url: 'https://www.google.com/search?q=', append: '&filter=0&num=100' },
+      bing: { url: 'https://www.bing.com/search?q=', append: '' },
+      duckduckgo: { url: 'https://duckduckgo.com/?q=', append: '' },
+      scholar: { url: 'https://scholar.google.com/scholar?q=', append: '' },
+      youtube: { url: 'https://www.youtube.com/results?search_query=', append: '' },
+      reddit: { url: 'https://www.reddit.com/search/?q=', append: '' },
+      github: { url: 'https://github.com/search?type=repositories&q=', append: '' },
+      twitter: { url: 'https://twitter.com/search?q=', append: '&src=typed_query' }
+    };
+
+    // Comprehensive list of all available and advanced search prefix operators
+    const ALL_OPERATORS = [
+      'site:', 'filetype:', 'ext:', 'intitle:', 'allintitle:', 
+      'inurl:', 'allinurl:', 'intext:', 'allintext:', 'inanchor:', 
+      'allinanchor:', 'before:', 'after:', 'related:', 'cache:', 
+      'source:', 'src:', 'weather:', 'map:', 'location:', 
+      'type:', 'link:', 'info:', 'feed:', 'mimetype:', 'name:', 'define:'
+    ];
+
+    // DOM References
+    const mainSearch = document.getElementById('mainSearch');
+    const liveQueryText = document.getElementById('liveQueryText');
+    const activeOperators = document.getElementById('activeOperators');
+    const openSheetBtn = document.getElementById('openSheetBtn');
+    const closeSheetBtn = document.getElementById('closeSheetBtn');
+    const sheetOverlay = document.getElementById('sheetOverlay');
+    const operatorSheet = document.getElementById('operatorSheet');
+    const sheetGrid = document.getElementById('sheetGrid');
+    const engineStrip = document.getElementById('engineStrip');
+    const executeBtn = document.getElementById('executeBtn');
+    const copyBtn = document.getElementById('copyBtn');
+
+    let currentEngine = 'google';
+    let operatorStates = [];
+
+    // Initialize Sheet Grid
+    ALL_OPERATORS.forEach(op => {
+      const btn = document.createElement('button');
+      btn.className = 'sheet-item';
+      btn.textContent = op;
+      btn.onclick = () => addOperator(op);
+      sheetGrid.appendChild(btn);
+    });
+
+    // Engine Selection
+    engineStrip.addEventListener('click', (e) => {
+      if(e.target.classList.contains('engine-pill')) {
+        document.querySelectorAll('.engine-pill').forEach(p => p.classList.remove('active'));
+        e.target.classList.add('active');
+        currentEngine = e.target.dataset.engine;
+      }
+    });
+
+    // Sheet Toggles
+    const openSheet = () => {
+      sheetOverlay.classList.add('active');
+      operatorSheet.classList.add('active');
+    };
+    const closeSheet = () => {
+      sheetOverlay.classList.remove('active');
+      operatorSheet.classList.remove('active');
+    };
+
+    openSheetBtn.addEventListener('click', openSheet);
+    closeSheetBtn.addEventListener('click', closeSheet);
+    sheetOverlay.addEventListener('click', closeSheet);
+
+    // Dynamic Operator Logic
+    function addOperator(op) {
+      const id = Date.now();
+      operatorStates.push({ id, op, val: '' });
+      renderOperators();
+      closeSheet();
+      updateLiveQuery();
+    }
+
+    function removeOperator(id) {
+      operatorStates = operatorStates.filter(o => o.id !== id);
+      renderOperators();
+      updateLiveQuery();
+    }
+
+    function renderOperators() {
+      // Clear pills except the Add button
+      Array.from(activeOperators.children).forEach(child => {
+        if (child !== openSheetBtn) child.remove();
+      });
+
+      operatorStates.forEach(state => {
+        const pill = document.createElement('div');
+        pill.className = 'op-pill';
+        
+        const label = document.createElement('div');
+        label.className = 'op-label';
+        label.textContent = state.op;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'op-input';
+        
+        // Smart hint styling based on operator type
+        if (state.op === 'filetype:' || state.op === 'ext:') {
+          input.setAttribute('list', 'common-exts');
+          input.placeholder = 'e.g. pdf, csv';
+        } else if (state.op === 'before:' || state.op === 'after:') {
+          input.placeholder = 'YYYY-MM-DD';
+        } else {
+          input.placeholder = 'value';
+        }
+        
+        input.value = state.val;
+        input.addEventListener('input', (e) => {
+          state.val = e.target.value.trim();
+          updateLiveQuery();
+        });
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'op-remove';
+        removeBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+        removeBtn.onclick = () => removeOperator(state.id);
+
+        pill.appendChild(label);
+        pill.appendChild(input);
+        pill.appendChild(removeBtn);
+        
+        activeOperators.insertBefore(pill, openSheetBtn);
+      });
+      
+      // Auto-focus latest input
+      const inputs = activeOperators.querySelectorAll('input');
+      if(inputs.length > 0) inputs[inputs.length - 1].focus();
+    }
+
+    // Live Query Logic
+    function getFullQuery() {
+      const base = mainSearch.value.trim();
+      const ops = operatorStates.map(s => s.val ? `${s.op}${s.val.includes(' ') ? `"${s.val}"` : s.val}` : '').filter(Boolean).join(' ');
+      return [base, ops].filter(Boolean).join(' ');
+    }
+
+    function updateLiveQuery() {
+      liveQueryText.textContent = getFullQuery();
+    }
+    mainSearch.addEventListener('input', updateLiveQuery);
+
+    // Copy to Clipboard feature
+    copyBtn.addEventListener('click', () => {
+      const text = getFullQuery();
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtn.classList.add('copied');
+        copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+        setTimeout(() => {
+          copyBtn.classList.remove('copied');
+          copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        }, 2000);
+      });
+    });
+
+    // Execute Search
+    function executeSearch() {
+      const fullQuery = getFullQuery();
+
+      if (!fullQuery) {
+        mainSearch.classList.remove('error');
+        void mainSearch.offsetWidth; // trigger reflow
+        mainSearch.classList.add('error');
+        mainSearch.focus();
+        setTimeout(() => mainSearch.classList.remove('error'), 400);
+        return;
+      }
+
+      const engineConf = ENGINES[currentEngine];
+      const finalUrl = `${engineConf.url}${encodeURIComponent(fullQuery)}${engineConf.append}`;
+      window.open(finalUrl, '_blank');
+    }
+
+    executeBtn.addEventListener('click', executeSearch);
+    mainSearch.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') executeSearch();
+    });
+
+  </script>
+</body>
+</html>
